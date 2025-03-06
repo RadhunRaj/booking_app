@@ -1,0 +1,104 @@
+  /* navbar */
+  body {
+    margin: 0;
+}
+.navbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background-color: rgb(39, 143, 4);
+    color: white;
+    padding: 15px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    height: 100px;
+    font-size: larger;
+}
+.navbar h1 {
+    margin: 0;
+}
+.date-time {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    position: absolute;
+    right: 20px;
+    top: 0%;
+    font-size: 15px;
+}
+/* button */
+.btn {
+    background-color: #d7492c;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+   
+}
+.btn:hover {
+    background-color: rgb(39, 143, 4);
+    transform: scale(1.05);
+}
+.btn:active {
+    transform: scale(0.95);
+}
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    width: 500px;
+    display: none; /* Initially hidden */
+    margin: 20px auto;
+    margin-top: 80px;
+}
+h2 {
+    text-align: center;
+}
+form {
+    margin-top: 5px;
+    gap: 10px;
+}
+.form-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+label {
+    flex: 1;
+    text-align: right;
+    margin-right: 10px;
+}
+input {
+    flex: 2;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+}
+.button-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+button {
+    margin-top: 0px;
+    padding: 10px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    
+}
+button:hover {
+    background-color: #218838;
+}
+.button-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}

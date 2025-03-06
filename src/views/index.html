@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="index.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha512-Fo3rlrZj/k7ujTnHg4C+6tnZiRkFoa6xvqBfG1pDjwZZ1ZLHtLsqfbjF1E6g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <title>Booking App</title>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <div class="navbar">
+      <h1>MEDICITY</h1>
+      <div class="date-time" id="dateTime"></div>
+    </div>
+
+    <script>
+      function updateDateTime() {
+        const now = new Date();
+        const date = now.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+        const time = now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        });
+        document.getElementById("dateTime").textContent = `${date} | ${time}`;
+      }
+      setInterval(updateDateTime, 1000);
+      updateDateTime();
+    </script>
+
+    <!-- Button -->
+    <div>
+      <button
+        class="btn"
+        style="
+          position: absolute;
+          top: 25%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        "
+        onclick="showForm()"
+      >
+        TAKE APPOINTMENT
+      </button>
+    </div>
+
+    <br /><br />
+
+    <!-- Form -->
+    <div class="container" id="appointmentContainer" style="display: none;">
+        <h2>Appointment Form</h2>
+        <form id="appointmentForm">
+          <label for="id">ID:</label>
+          <input type="number" id="id" name="id" required /><br /><br />
+      
+          <label for="date">Date:</label>
+          <input type="date" id="date" name="date" required /><br /><br />
+      
+          <label for="time">Time:</label>
+          <input type="time" id="time" name="time" required /><br /><br />
+      
+          <label for="patient">Patient Name:</label>
+          <input type="text" id="patient" name="patient" required /><br /><br />
+      
+          <label for="type">Doctor Type:</label>
+          <select id="type" name="type" required onchange="updateDepartmentOptions()">
+            <option value="">Select Doctor Type</option>
+            <option value="maledoctor">Male Doctor</option>
+            <option value="femaledoctor">Female Doctor</option>
+          </select><br /><br />
+      
+          <label for="department">Specialization:</label>
+          <select id="department" name="department" required>
+            <option value="">Select Specialization</option>
+          </select><br /><br />
+      
+          <div class="button-container">
+            <button type="submit">Submit</button>
+          </div>
+        </form>
+
+        <!-- Appointments List -->
+        <div id="appointmentsList" style="margin-top: 20px; display: none;">
+          <h3>Appointments</h3>
+          <table border ="1" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Patient</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Doctor Type</th>
+                <th>Department</th>
+              </tr>
+            </thead>
+            <tbody id="appointmentsTable">
+              <!-- Appointments will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+
+      <!-- selecting options -->
+      <script>
+        const apiUrl = "http://localhost:2000/api/patient";
+        
+        function updateDepartmentOptions() {
+          const typeSelect = document.getElementById("type");
+          const departmentSelect = document.getElementById("department");
+      
+          departmentSelect.innerHTML = '<option value="">Select Specialization</option>';
+      
+          if (typeSelect.value === "maledoctor") {
+            ["Cardio", "Ortho", "Gastro"].forEach((dept) => {
+              let option = new Option(dept, dept.toUpperCase());
+              departmentSelect.appendChild(option);
+            });
+          } else if (typeSelect.value === "femaledoctor") {
+            ["Gynec", "Dental", "Dermo"].forEach((dept) => {
+              let option = new Option(dept, dept.toUpperCase());
+              departmentSelect.appendChild(option);
+            });
+          }
+        }
+
+        async function addPatient(event) {
+          event.preventDefault(); // Prevent default form submission
+
+          const id = Number(document.getElementById("id").value);
+          const time = document.getElementById("time").value;
+          const date = document.getElementById("date").value; // Use as string for validation
+          const department = document.getElementById("department").value;
+          const type = document.getElementById("type").value;
+          const patient = document.getElementById("patient").value;
+          const submitButton = document.querySelector("button[type='submit']");
+
+          // Basic validation checks
+          if (!id || id <= 0) {
+              Swal.fire('Error', 'Please enter a valid positive ID.', 'error');
+              return;
+          }
+
+          if (!time) {
+              Swal.fire('Error', 'Please select a valid time.', 'error');
+              return;
+          }
+
+          if (!date || isNaN(Date.parse(date))) {
+              Swal.fire('Error', 'Please select a valid date.', 'error');
+              return;
+          }
+
+          if (!department || !type || !patient.trim()) {
+              Swal.fire('Error', 'Please fill in all fields.', 'error');
+              return;
+          }
+
+          // Disable button to prevent multiple clicks
+          submitButton.disabled = true;
+          submitButton.textContent = "Submitting...";
+
+          const newPatient = { id, time, date, department, type, patient };
+
+          try {
+              const response = await fetch(apiUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(newPatient),
+              });
+
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.message || "Failed to add patient. Please try again.");
+              }
+
+              await fetchPatients(); // Update the UI with the current list of patients
+              Swal.fire('Success', 'Patient appointment added successfully.', 'success');
+
+              document.getElementById("appointmentForm").reset(); // Clear form
+          } catch (error) {
+              Swal.fire('Error', error.message, 'error');
+          } finally {
+              // Re-enable button after request
+              submitButton.disabled = false;
+              submitButton.textContent = "Submit";
+          }
+        }
+
+        async function fetchPatients() {
+          try {
+              const response = await fetch(apiUrl);
+              
+              if (!response.ok) {
+                  throw new Error("Failed to fetch appointments");
+              }
+              
+              const appointments = await response.json();
+              
+              const appointmentsTable = document.getElementById("appointmentsTable");
+              const appointmentsList = document.getElementById("appointmentsList");
+              
+              // Clear existing rows
+              appointmentsTable.innerHTML = "";
+              
+              if (appointments.length > 0) {
+                  appointmentsList.style.display = "block";
+                  
+                  // Add each appointment to the table
+                  appointments.forEach(app => {
+                      const row = document.createElement("tr");
+                      row.innerHTML = `
+                          <td>${app.id}</td>
+                          <td>${app.patient}</td>
+                          <td>${app.date}</td>
+                          <td>${app.time}</td>
+                          <td>${app.type}</td>
+                          <td>${app.department}</td>
+                            <td>
+                        <button class="edit-btn" data-id="${app.id}">Edit</button>
+                        <button class="delete-btn" data-id="${app.id}">Delete</button>
+                    </td>
+                      `;
+                    
+                      appointmentsTable.appendChild(row);
+                  });
+              } else {
+                  appointmentsList.style.display = "none";
+              }
+              
+          } catch (error) {
+              console.error("Error fetching appointments:", error);
+          }
+        }
+
+        // Attach event listener to the form
+        document.getElementById("appointmentForm").addEventListener("submit", addPatient);
+        
+        // Fetch appointments when page loads
+        document.addEventListener("DOMContentLoaded", function() {
+          fetchPatients();
+        });
+
+       
+
+        async function editPatient(event) {
+    const patientId = event.target.getAttribute("data-id");
+    if (!patientId) return;
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error("Failed to fetch appointments");
+        }
+        
+        const appointments = await response.json();
+        const patient = appointments.find(app => app.id == patientId);
+        if (!patient) {
+            Swal.fire("Error", "Patient not found.", "error");
+            return;
+        }
+
+        // Populate form with patient details
+        document.getElementById("id").value = patient.id;
+        document.getElementById("time").value = patient.time;
+        document.getElementById("date").value = patient.date;
+        document.getElementById("department").value = patient.department;
+        document.getElementById("type").value = patient.type;
+        document.getElementById("patient").value = patient.patient;
+        
+        // Change submit button to indicate update mode
+        const submitButton = document.querySelector("button[type='submit']");
+        submitButton.textContent = "Update";
+        submitButton.onclick = async function (e) {
+            e.preventDefault();
+            await updatePatient(patientId);
+        };
+    } catch (error) {
+        Swal.fire("Error", error.message, "error");
+    }
+}
+
+async function updatePatient(patientId) {
+    const id = Number(document.getElementById("id").value);
+    const time = document.getElementById("time").value;
+    const date = document.getElementById("date").value;
+    const department = document.getElementById("department").value;
+    const type = document.getElementById("type").value;
+    const patient = document.getElementById("patient").value;
+    const submitButton = document.querySelector("button[type='submit']");
+
+    if (!id || id <= 0 || !time || !date || !department || !type || !patient.trim()) {
+        Swal.fire("Error", "Please fill in all fields correctly.", "error");
+        return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.textContent = "Updating...";
+
+    const updatedPatient = { id, time, date, department, type, patient };
+
+    try {
+        const response = await fetch(`${apiUrl}/${patientId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedPatient),
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to update patient.");
+        }
+
+        await fetchPatients();
+        Swal.fire("Success", "Patient details updated successfully.", "success");
+        document.getElementById("appointmentForm").reset();
+        submitButton.textContent = "Submit";
+        submitButton.onclick = addPatient;
+    } catch (error) {
+        Swal.fire("Error", error.message, "error");
+    } finally {
+        submitButton.disabled = false;
+    }
+}
+
+// Attach edit event listeners
+document.addEventListener("click", function (event) {
+    if (event.target.classList.contains("edit-btn")) {
+        editPatient(event);
+    }
+});
+
+
+
+
+    async function deleteAppointment(id) {
+    try {
+        const confirmation = await Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+
+        if (!confirmation.isConfirmed) {
+            return;
+        }
+
+        const response = await fetch(`${apiUrl}/${id}`, {
+            method: "DELETE",
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to delete appointment");
+        }
+
+        Swal.fire("Deleted!", "The appointment has been deleted.", "success");
+        fetchPatients(); // Refresh the table after deletion
+    } catch (error) {
+        Swal.fire("Error!", "Could not delete the appointment.", "error");
+        console.error("Error deleting appointment:", error);
+    }
+}
+
+// Attach event listener to dynamically created delete buttons
+document.addEventListener("click", function(event) {
+    if (event.target.classList.contains("delete-btn")) {
+        const appointmentId = event.target.getAttribute("data-id");
+        deleteAppointment(appointmentId);
+    }
+});
+      </script>
+      
+      <!-- time and date -->
+    <script>
+      function showForm() {
+        document.getElementById("appointmentContainer").style.display = "block";
+      }
+    </script>
+  </body>
+</html>
